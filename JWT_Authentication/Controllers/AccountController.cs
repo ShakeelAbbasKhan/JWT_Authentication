@@ -1,4 +1,5 @@
-﻿using JWT_Authentication.Helper;
+﻿using JWT_Authentication.AuthServiceRepository;
+using JWT_Authentication.Helper;
 using JWT_Authentication.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -13,30 +14,29 @@ namespace JWT_Authentication.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AccountController> _logger;
         private readonly JWTService _jWTService;
+        private readonly IAuthService _authService;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(ApplicationDbContext db, UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager,
-            ILogger<AccountController> logger, JWTService jWTService)
+        public AccountController(UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager, ILogger<AccountController> logger, JWTService jWTService, IAuthService authService, IConfiguration configuration)
         {
-            _db = db;
             _userManager = userManager;
             _signInManager = signInManager;
-            _roleManager = roleManager;
             _logger = logger;
             _jWTService = jWTService;
+            _authService = authService;
+            _configuration = configuration;
         }
 
 
         [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-           
+            TokenViewModel _TokenViewModel = new();
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(model.Email);
@@ -49,7 +49,7 @@ namespace JWT_Authentication.Controllers
                     }
                 }
 
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe,true);
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, true);
                 if (result.Succeeded)
                 {
                     var userRoles = await _userManager.GetRolesAsync(user);
@@ -64,12 +64,18 @@ namespace JWT_Authentication.Controllers
                     {
                         authClaims.Add(new Claim(ClaimTypes.Role, userRole));
                     }
-                    string token = _jWTService.GenerateToken(authClaims);
+                    _TokenViewModel.AccessToken = _jWTService.GenerateToken(authClaims);
+                    _TokenViewModel.RefreshToken = _authService.GenerateRefreshToken();
+                    _TokenViewModel.StatusCode = 1;
+                    _TokenViewModel.StatusMessage = "Success";
 
-                    user.LastLoginDate = DateTime.Now;
+                    var _RefreshTokenValidityInDays = Convert.ToInt64(_configuration["JWTKey:RefreshTokenValidityInDays"]);
+                    user.RefreshToken = _TokenViewModel.AccessToken;
+                    user.RefreshTokenExpiryTime = DateTime.Now.AddDays(_RefreshTokenValidityInDays);
                     await _userManager.UpdateAsync(user);
 
-                    return Ok(new { token });
+
+                    return Ok(new { _TokenViewModel });
 
                 }
 
@@ -84,7 +90,8 @@ namespace JWT_Authentication.Controllers
 
             return BadRequest(ModelState);
         }
- 
+
+
         [Authorize(Policy = "SuperUserRights")]
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterViewModel registerModel)
@@ -117,6 +124,7 @@ namespace JWT_Authentication.Controllers
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
+            Response.Cookies.Delete("token");
             return Ok("Logged out successfully");
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using JWT_Authentication.ViewModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,10 +10,12 @@ namespace JWT_Authentication.Helper
     public class JWTService
     {
         private readonly IConfiguration _configuration;
+      //  private readonly UserManager<ApplicationUser> _userManager;
 
         public JWTService(IConfiguration configuration)
         {
             _configuration = configuration;
+          //  _userManager = userManager;
         }
 
         public string GenerateToken(IEnumerable<Claim> claims)

@@ -18,15 +18,15 @@ namespace JWT_Authentication.Controllers
             _db = db;
         }
 
-        [HttpGet("GetCategories")]
-        public async Task<IActionResult> GetCategories()
+        [HttpGet("GetStudents")]
+        public async Task<IActionResult> GetStudents()
         {
             var categoryList = await _db.Students.ToListAsync();
             return Ok(categoryList);
         }
 
-        [HttpGet("GetCategory/{id}")]
-        public async Task<IActionResult> GetCategory(int id)
+        [HttpGet("GetStudent/{id}")]
+        public async Task<IActionResult> GetStudent(int id)
         {
             var category = await _db.Students.FirstOrDefaultAsync(x => x.Id == id);
             if (category == null)
@@ -36,8 +36,8 @@ namespace JWT_Authentication.Controllers
             return Ok(category);
         }
 
-        [HttpPost("CreateCategory")]
-        public async Task<IActionResult> CreateCategory(Student obj)
+        [HttpPost("CreateStudent")]
+        public async Task<IActionResult> CreateStudent(Student obj)
         {
           
             if (ModelState.IsValid)
@@ -50,8 +50,8 @@ namespace JWT_Authentication.Controllers
             return BadRequest(ModelState);
         }
 
-        [HttpPut("UpdateCategory/{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, Student obj)
+        [HttpPut("UpdateStudent/{id}")]
+        public async Task<IActionResult> UpdateStudent(int id, Student obj)
         {
             if (id != obj.Id)
             {
@@ -68,8 +68,8 @@ namespace JWT_Authentication.Controllers
             return BadRequest(ModelState);
         }
 
-        [HttpDelete("DeleteCategory/{id}")]
-        public async Task<IActionResult> DeleteCategory(int id)
+        [HttpDelete("DeleteStudent/{id}")]
+        public async Task<IActionResult> DeleteStudent(int id)
         {
             var category = await _db.Students.FindAsync(id);
             if (category == null)

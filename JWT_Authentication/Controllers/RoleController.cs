@@ -1,11 +1,11 @@
 ﻿using JWT_Authentication.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JWT_Authentication.Controllers
 {
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Authorize(Policy = "SuperUserRights")]
     [Route("api/[controller]")]
     [ApiController]

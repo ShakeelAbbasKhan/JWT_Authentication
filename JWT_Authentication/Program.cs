@@ -1,4 +1,6 @@
+using JWT_Authentication.AuthServiceRepository;
 using JWT_Authentication.Helper;
+using JWT_Authentication.Middleware;
 using JWT_Authentication.ViewModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -13,15 +15,16 @@ builder.Services.AddDbContext<ApplicationDbContext>
         (options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // configure the Identity 
-
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
     options.Lockout.MaxFailedAccessAttempts = 5;
 
 }).AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders()
     .AddRoles<IdentityRole>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // configure the passwordOptions to change then properties buildIn 
 
@@ -29,8 +32,13 @@ builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequiredLength = 10;
     options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
 });
 
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<RefreshTokenValidationMiddleware>();
+});
 
 builder.Services.AddScoped<JWTService>();
 
@@ -81,6 +89,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 
 app.UseAuthentication();
 
