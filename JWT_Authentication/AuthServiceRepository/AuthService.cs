@@ -21,51 +21,6 @@ namespace JWT_Authentication.AuthServiceRepository
             _JWTService = JWTService;
         }
 
-        public async Task<TokenViewModel> Login(LoginViewModel model)
-        {
-
-
-            TokenViewModel _TokenViewModel = new();
-            var user = await _userManager.FindByNameAsync(model.Email);
-
-            if (user == null)
-            {
-                _TokenViewModel.StatusCode = 0;
-                _TokenViewModel.StatusMessage = "Invalid username";
-                return _TokenViewModel;
-            }
-            if (!await _userManager.CheckPasswordAsync(user, model.Password))
-            {
-                _TokenViewModel.StatusCode = 0;
-                _TokenViewModel.StatusMessage = "Invalid password";
-                return _TokenViewModel;
-            }
-
-            var userRoles = await _userManager.GetRolesAsync(user);
-            var authClaims = new List<Claim>
-            {
-               new Claim(ClaimTypes.Name, user.UserName),
-               new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            };
-
-            foreach (var userRole in userRoles)
-            {
-                authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-            }
-            _TokenViewModel.AccessToken = _JWTService.GenerateToken(authClaims);
-            _TokenViewModel.RefreshToken = GenerateRefreshToken();
-            _TokenViewModel.StatusCode = 1;
-            _TokenViewModel.StatusMessage = "Success";
-
-            var _RefreshTokenValidityInDays = Convert.ToInt64(_configuration["JWTKey:RefreshTokenValidityInDays"]);
-            user.RefreshToken = _TokenViewModel.AccessToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(_RefreshTokenValidityInDays);
-            await _userManager.UpdateAsync(user);
-
-
-            return _TokenViewModel;
-        }
-
         public async Task<TokenViewModel> GetRefreshToken(GetRefreshTokenViewModel model)
         {
             TokenViewModel _TokenViewModel = new();
